@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 GitHub 西洋棋</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #312e2b;
+            color: #fff;
+        }
+        h1 { margin-bottom: 10px; }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 4px solid #1a1917;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .light { background-color: #eeeed2; color: #769656; }
+        .dark { background-color: #769656; color: #eeeed2; }
+        .selected { background-color: #baca44 !important; }
+        #status { margin-top: 15px; font-size: 18px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Web Chess</h1>
+    <div id="board"></div>
+    <div id="status">輪到白方下子</div>
+
+    <script>
+        // 使用 Unicode 符號代表棋子
+        const pieces = {
+            'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟', // 黑棋
+            'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙', // 白棋
+            '': ''
+        };
+
+        // 初始棋盤佈局 (大寫為白棋，小寫為黑棋)
+        let boardState = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            ['',  '',  '',  '',  '',  '',  '',  ''],
+            ['',  '',  '',  '',  '',  '',  '',  ''],
+            ['',  '',  '',  '',  '',  '',  '',  ''],
+            ['',  '',  '',  '',  '',  '',  '',  ''],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+        ];
+
+        let selectedSquare = null;
+        let turn = 'W'; // 'W' 為白方，'B' 為黑方
+
+        const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+
+        // 渲染棋盤
+        function createBoard() {
+            boardElement.innerHTML = '';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const square = document.createElement('div');
+                    const isLight = (r + c) % 2 === 0;
+                    square.className = `square ${isLight ? 'light' : 'dark'}`;
+                    square.dataset.row = r;
+                    square.dataset.col = c;
+                    
+                    const piece = boardState[r][c];
+                    square.textContent = pieces[piece];
+
+                    // 如果棋子屬於目前回合的玩家，文字顏色稍微區分（可選）
+                    if (piece) {
+                        const isWhitePiece = piece === piece.toUpperCase();
+                        square.style.color = isWhitePiece ? '#ffffff' : '#000000';
+                        square.style.textShadow = isWhitePiece ? '0 0 3px #000' : '0 0 3px #fff';
+                    }
+
+                    square.addEventListener('click', () => handleSquareClick(r, c));
+                    boardElement.appendChild(square);
+                }
+            }
+        }
+
+        // 點擊格子的邏輯
+        function handleSquareClick(r, c) {
+            const piece = boardState[r][c];
+            const isWhitePiece = piece && piece === piece.toUpperCase();
+
+            // 1. 如果尚未選取棋子
+            if (selectedSquare === null) {
+                if (piece && ((turn === 'W' && isWhitePiece) || (turn === 'B' && !isWhitePiece))) {
+                    selectedSquare = { row: r, col: c };
+                    highlightSquare(r, c);
+                }
+            } 
+            // 2. 如果已經選取了棋子，現在點擊目的地
+            else {
+                const prevR = selectedSquare.row;
+                const prevC = selectedSquare.col;
+
+                // 如果點擊同一方棋子，切換選取對象
+                if (piece && ((turn === 'W' && isWhitePiece) || (turn === 'B' && !isWhitePiece))) {
+                    selectedSquare = { row: r, col: c };
+                    highlightSquare(r, c);
+                    return;
+                }
+
+                // 基礎移動規則：這裡直接允許移動 (你可以後續讓 Big Pickle 幫你加上嚴格的西洋棋規則)
+                boardState[r][c] = boardState[prevR][prevC];
+                boardState[prevR][prevC] = '';
+
+                // 切換回合
+                turn = turn === 'W' ? 'B' : 'W';
+                statusElement.textContent = turn === 'W' ? '輪到白方下子' : '輪到黑方下子';
+                
+                selectedSquare = null;
+                createBoard();
+            }
+        }
+
+        // 高亮選中的格子
+        function highlightSquare(r, c) {
+            createBoard(); // 先重置棋盤樣式
+            const index = r * 8 + c;
+            boardElement.children[index].classList.add('selected');
+        }
+
+        // 啟動遊戲
+        createBoard();
+    </script>
+</body>
+</html>
